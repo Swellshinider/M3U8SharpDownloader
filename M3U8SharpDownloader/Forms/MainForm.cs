@@ -1,105 +1,84 @@
-﻿using LForms.Controls.Buttons;
-using LForms.Controls.Forms;
+﻿using LForms.Controls.Forms;
+using LForms.Controls.Panels;
 using LForms.Extensions;
 using M3U8SharpDownloader.Forms.Tabs;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
-using System.Reflection;
 using System.Windows.Forms;
 
 namespace M3U8SharpDownloader.Forms;
 
 public sealed class MainForm : LealForm
 {
-    private readonly Panel _leftPanel = new();
-    private readonly Panel _container = new();
+    private readonly LealPanel _topPanel = new(true);
+    private readonly LealPanel _leftPanel = new(true);
+    private readonly LealPanel _container = new(true);
+    private readonly List<Size> _sizes = [
+        new Size(1280, 720),
+        new Size(1600, 900),
+        new Size(1920, 1080)
+    ];
+    private int _currentSizeIndex = 2;
 
-    public MainForm(string text)
+    public MainForm()
     {
-        Text = text;
+        Text = "M3U8SharpDownloader | by: Swellshinider";
+        KeyPreview = true;
+        KeyDown += MainForm_KeyDown;
+        FormBorderStyle = FormBorderStyle.None;
+        BackColor = ColorPallete.MainBackgroundColor;
+        _currentSizeIndex = Settings.Default.SizeIndex >= _sizes.Count 
+            ? _sizes.Count - 1 
+            : _currentSizeIndex;
+        SetFixedSize(_sizes[_currentSizeIndex].Width, _sizes[_currentSizeIndex].Height);
+    }
+
+    public override void ReDraw()
+    {
+        this.GenerateRoundRegion();
     }
 
     public override void LoadComponents()
     {
-        _container.Dock = DockStyle.Fill;
-        this.Add(_container);
-
-        BackColor = Color.White.Darken(0.75);
-
+        _topPanel.Height = 48;
         _leftPanel.Width = 250;
+
+        _topPanel.Dock = DockStyle.Top;
         _leftPanel.Dock = DockStyle.Left;
-        _leftPanel.BackColor = Color.DeepSkyBlue;
+        _container.Dock = DockStyle.Fill;
+
+        this.Add(_container);
         this.Add(_leftPanel);
+        this.Add(_topPanel);
 
-        var topPanel = new Panel()
-        {
-            Height = 100,
-            Dock = DockStyle.Top,
-        };
-        var homeButton = GenerateSelectableButton("Home", true, new MainTab());
-        var configurationButton = GenerateSelectableButton("Configuration", false);
-        var downloadButton = GenerateSelectableButton("Download", false);
-        var historyButton = GenerateSelectableButton("History", false);
-        var supportButton = GenerateSelectableButton("Help/Support", false);
+        //////////////
 
-        var labelAppName = new Label()
-        {
-            AutoSize = false,
-            Dock = DockStyle.Fill,
-            Text = "M3U8SharpDownloader",
-            ForeColor = Color.NavajoWhite,
-            TextAlign = ContentAlignment.MiddleCenter,
-        };
-        labelAppName.Font = new Font(labelAppName.Font.FontFamily, 12, FontStyle.Bold);
-        topPanel.Add(labelAppName);
-
-        var v = Assembly.GetExecutingAssembly().GetName().Version!;
-        var bottomInfo = new Label()
-        {
-            Height = 100,
-            AutoSize = false,
-            Dock = DockStyle.Bottom,
-            Text = $"Made by: Swellshinider\nv{v.Major}.{v.Minor}.{v.Build}.{v.Revision}",
-            ForeColor = Color.NavajoWhite,
-            TextAlign = ContentAlignment.MiddleCenter,
-        };
-        _leftPanel.Add(bottomInfo);
-
-        _leftPanel.Add(topPanel);
-        _leftPanel.Add(homeButton);
-        _leftPanel.Add(configurationButton);
-        _leftPanel.Add(downloadButton);
-        _leftPanel.Add(historyButton);
-        _leftPanel.Add(supportButton);
-        _leftPanel.Controls.WaterFallControlsOfType<LealSelectableButton>(topPanel.Location.Y + topPanel.Height + 5, 5);
-
-        TabClick(homeButton.ObjectRef as Panel);
+        _container.Add(new HomeTab());
     }
 
-    private LealSelectableButton GenerateSelectableButton(string title, bool selected, Panel? tab = null)
+    private void MainForm_KeyDown(object? sender, KeyEventArgs e)
     {
-        var selectableButton = new LealSelectableButton(tab)
+        if (!e.Control)
+            return;
+
+        var previousSizeIndex = _currentSizeIndex;
+
+        if (e.KeyCode == Keys.Oemplus || e.KeyCode == Keys.Add)
         {
-            Height = 50,
-            Width = 225,
-            Text = title,
-            BorderSize = 0,
-            AutoSearch = true,
-            Selected = selected,
-            ForeColor = Color.NavajoWhite,
-            SelectedColor = _container.BackColor,
-            UnSelectedColor = _leftPanel.BackColor,
-        };
-        selectableButton.GenerateCustomRoundRegion(25, true, false, true, false);
-        selectableButton.SetXFromLeft(_leftPanel, 0);
-        selectableButton.Click += (s, e) => TabClick(tab);
-        return selectableButton;
-    }
+            if (_currentSizeIndex < _sizes.Count - 1)
+                _currentSizeIndex++;
+        }
+        else if (e.KeyCode == Keys.OemMinus || e.KeyCode == Keys.Subtract)
+        {
+            if (_currentSizeIndex > 0)
+                _currentSizeIndex--;
+        }
 
-    private void TabClick(Panel? tab)
-    {
-        _container.Controls.Clear();
+        if (previousSizeIndex == _currentSizeIndex)
+            return;
 
-        if (tab != null)
-            _container.Add(tab);
+        SetFixedSize(_sizes[_currentSizeIndex].Width, _sizes[_currentSizeIndex].Height);
+        Settings.Default.SizeIndex = _currentSizeIndex;
     }
 }
