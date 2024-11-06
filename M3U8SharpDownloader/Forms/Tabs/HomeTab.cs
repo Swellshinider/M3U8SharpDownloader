@@ -1,4 +1,5 @@
 ﻿using LForms;
+using LForms.Controls.Buttons;
 using LForms.Controls.Panels;
 using LForms.Controls.TextBoxes;
 using LForms.Extensions;
@@ -26,16 +27,24 @@ public sealed class HomeTab : LealPanel
     {
         _searchBox = new LealTextBox()
         {
-            Width = 250,
+            Width = 500,
             Height = 50,
             Placeholder = "Search",
             ForeColor = ColorPallete.TextFontColor,
-            BackColor = ColorPallete.MainBackgroundColor,
+            BackColor = ColorPallete.SecondaryBackgroundColor,
             BorderStyle = BorderStyle.FixedSingle,
         };
         this.Add(_searchBox);
 
-        _searchBox.SetX(LealConstants.GAP);
-        _searchBox.SetY(LealConstants.GAP);
+        _searchBox.DockTopLeftWithPadding(0, LealConstants.GAP);
+
+        var buttonAddUrl = new LealButton((s, e) => MessageBox.Show("aa"))
+        {
+            Text = "Butto Add",
+        };
+
+        this.Add(buttonAddUrl);
+
+        buttonAddUrl.DockTopRightWithPadding(0, LealConstants.GAP);
     }
 }

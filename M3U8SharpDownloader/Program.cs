@@ -1,6 +1,7 @@
 using LForms.Enums;
 using LForms.Extensions;
 using M3U8SharpDownloader.Forms;
+using M3U8SharpDownloader.Properties;
 using System;
 using System.Windows.Forms;
 
@@ -26,7 +27,6 @@ internal static class Program
         finally
         {
             mainForm?.Dispose();
-            Settings.Default.Save();
         }
     }
 }
