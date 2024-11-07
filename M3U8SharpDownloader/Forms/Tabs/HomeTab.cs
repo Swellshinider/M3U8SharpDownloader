@@ -7,14 +7,9 @@ using System.Windows.Forms;
 
 namespace M3U8SharpDownloader.Forms.Tabs;
 
-public sealed class HomeTab : LealPanel
+internal sealed class HomeTab : BaseTab
 {
     private LealTextBox? _searchBox;
-
-    public HomeTab() : base(true)
-    {
-        Dock = DockStyle.Fill;
-    }
 
     protected override void ReDraw()
     {

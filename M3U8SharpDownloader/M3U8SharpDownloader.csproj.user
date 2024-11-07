@@ -4,6 +4,9 @@
     <Compile Update="Forms\MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
+    <Compile Update="Forms\Tabs\BaseTab.cs">
+      <SubType>Component</SubType>
+    </Compile>
     <Compile Update="Forms\Tabs\HomeTab.cs">
       <SubType>Component</SubType>
     </Compile>
