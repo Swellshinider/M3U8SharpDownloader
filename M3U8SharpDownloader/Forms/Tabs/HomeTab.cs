@@ -1,8 +1,11 @@
 ﻿using LForms;
 using LForms.Controls.Buttons;
-using LForms.Controls.Panels;
 using LForms.Controls.TextBoxes;
 using LForms.Extensions;
+using M3U8SharpDownloader.Converter;
+using M3U8SharpDownloader.Forms.Modals;
+using System;
+using System.Drawing;
 using System.Windows.Forms;
 
 namespace M3U8SharpDownloader.Forms.Tabs;
@@ -10,6 +13,8 @@ namespace M3U8SharpDownloader.Forms.Tabs;
 internal sealed class HomeTab : BaseTab
 {
     private LealTextBox? _searchBox;
+    private LealButton? _buttonDownload;
+    private LealButton? _buttonAddUrl;
 
     protected override void ReDraw()
     {
@@ -31,15 +36,45 @@ internal sealed class HomeTab : BaseTab
         };
         this.Add(_searchBox);
 
-        _searchBox.DockTopLeftWithPadding(0, LealConstants.GAP);
+        _searchBox.DockTopLeftWithPadding(LealConstants.GAP, LealConstants.GAP);
 
-        var buttonAddUrl = new LealButton((s, e) => MessageBox.Show("aa"))
+        _buttonDownload = new LealButton()
         {
-            Text = "Butto Add",
+            Height = 50,
+            Text = "Start Download",
+            ForeColor = Color.WhiteSmoke
         };
+        this.Add(_buttonDownload);
 
-        this.Add(buttonAddUrl);
+        _buttonDownload.DockTopRightWithPadding(LealConstants.GAP, LealConstants.GAP);
 
-        buttonAddUrl.DockTopRightWithPadding(0, LealConstants.GAP);
+        _buttonAddUrl = new LealButton(OpenModal)
+        {
+            Text = "+",
+            Width = 50,
+            Height = 50,
+            ForeColor = Color.WhiteSmoke
+        };
+        this.Add(_buttonAddUrl);
+        _buttonAddUrl.DockTopRightWithPadding(LealConstants.GAP, _buttonDownload.Width + (LealConstants.GAP * 2));
+    }
+
+    private void OpenModal(object? sender, EventArgs e)
+    {
+        if (sender is not LealButton lb)
+            return;
+
+        var xPoint = Width - (Width - _searchBox!.Location.X);
+        var yPoint = lb.Location.Y + lb.Height;
+
+        var modalUrl = new AddUrlModal(PointToScreen(new Point(xPoint, yPoint)));
+        modalUrl.UrlDataAdd += ModalUrl_UrlDataAdd;
+        modalUrl.ShowDialog();
+
+    }
+
+    private void ModalUrl_UrlDataAdd(object? sender, UrlData e)
+    {
+
     }
 }

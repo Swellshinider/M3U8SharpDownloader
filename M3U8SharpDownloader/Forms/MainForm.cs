@@ -1,5 +1,6 @@
 ﻿using LForms.Controls.Buttons;
 using LForms.Controls.Forms;
+using LForms.Controls.Mischellaneous;
 using LForms.Controls.Panels;
 using LForms.Extensions;
 using M3U8SharpDownloader.Forms.Tabs;
@@ -16,7 +17,7 @@ public sealed class MainForm : LealForm
 {
     private readonly LealPanel _topPanel = new(true);
     private readonly LealPanel _leftPanel = new(true);
-    private readonly LealPanel _container = new(true);
+    private readonly LealPanel _container = new(false);
     private readonly List<BaseTab> _tabs = [];
     private readonly List<Size> _sizes = [
         new Size(1280, 720),
@@ -58,19 +59,27 @@ public sealed class MainForm : LealForm
 
         this.Add(_container);
         this.Add(_leftPanel);
+        this.Add(new LealSeparator()
+        {
+            Height = 2,
+            LineSpacing = 0,
+            LineThickness = 2,
+            Dock = DockStyle.Top,
+            LineColor = ColorPallete.HighLightColor,
+            Orientation = Orientation.Horizontal,
+        });
         this.Add(_topPanel);
 
-        /// =================
-        /// Top Panel 
-        /// =================
+        ////////////////////////////////////////////////////
+
         var textLabel = new Label()
         {
-            Text = "M3U8SharpDownloader",
+            Text = "M3U8SharpDownloader, by: Swellshinider",
             AutoSize = false,
             Width = 1000,
             ForeColor = ColorPallete.TextFontColor,
             TextAlign = ContentAlignment.MiddleLeft,
-            Font = new Font("Rubik", 14, FontStyle.Regular),
+            Font = new Font("Rubik", 12, FontStyle.Regular),
         };
         _topPanel.Add(textLabel);
         textLabel.DockTopBottomLeftWithPadding(3, 3, 5);
@@ -83,8 +92,8 @@ public sealed class MainForm : LealForm
             BorderSize = 0,
             Dock = DockStyle.Right,
             Width = _topPanel.Height,
-            MouseHoverColor = Color.Red,
-            MouseDownColor = Color.Red.Darken(0.1),
+            MouseHoverColor = Color.Red.Lighten(0.2),
+            MouseDownColor = Color.Red.Darken(0.4),
         };
         var configButton = new LealButton()
         {
@@ -105,11 +114,20 @@ public sealed class MainForm : LealForm
         _topPanel.Add(configButton);
         _topPanel.Add(closeButton);
 
+        ////////////////////////////////////////////////////
 
-        /// =================
-        /// Left Panel
-        /// =================
-        /// 
+        _leftPanel.Add(new LealSeparator()
+        {
+            Width = 2,
+            LineSpacing = 0,
+            LineThickness = 2,
+            Dock = DockStyle.Right,
+            LineColor = ColorPallete.HighLightColor,
+            Orientation = Orientation.Vertical,
+        });
+
+        ////////////////////////////////////////////////////
+
         ChangeTab(typeof(HomeTab));
     }
 
@@ -118,18 +136,15 @@ public sealed class MainForm : LealForm
         if (tabType == null || !typeof(BaseTab).IsAssignableFrom(tabType))
             return;
 
-        // Check if a tab of the given type already exists
         var existingTab = _tabs.FirstOrDefault(t => t.GetType() == tabType);
 
         if (existingTab != null)
         {
-            // Reload the existing tab
             _container.Controls.Clear();
             _container.Add(existingTab);
         }
         else
         {
-            // Create a new instance of the tab and add it to the list
             var newTab = Activator.CreateInstance(tabType) as BaseTab ??
                 throw new Exception("Could not instantiate tab with activator");
 
