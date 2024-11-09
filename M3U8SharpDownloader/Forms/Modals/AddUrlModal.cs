@@ -5,12 +5,7 @@ using LForms.Controls.TextBoxes;
 using LForms.Extensions;
 using M3U8SharpDownloader.Converter;
 using System;
-using System.Collections.Generic;
 using System.Drawing;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace M3U8SharpDownloader.Forms.Modals;
@@ -59,7 +54,7 @@ internal sealed class AddUrlModal : LealForm
         };
         this.Add(title);
 
-        var buttonAdd = new LealButton((s, e) => AddNewUrlData())
+        var buttonAdd = new LealButton((s, e) => AddNewUrlData(urlInput, title))
         {
             Height = 50,
             Width = 125,
@@ -68,14 +63,14 @@ internal sealed class AddUrlModal : LealForm
         };
         this.Add(buttonAdd);
 
-        var buttonCancel = new LealButton((s, e) => Close())
+        var buttonClose = new LealButton((s, e) => Close())
         {
             Height = 50,
             Width = 125,
-            Text = "Cancel",
+            Text = "Close",
             ForeColor = ColorPallete.HighLightColor,
         };
-        this.Add(buttonCancel);
+        this.Add(buttonClose);
 
         this.WaterFallChildControlsOfTypeByY<LealTextBox>(LealConstants.GAP * 2, LealConstants.GAP);
         urlInput.HorizontalCentralize();
@@ -85,13 +80,14 @@ internal sealed class AddUrlModal : LealForm
         buttonAdd.HorizontalCentralize();
         buttonAdd.AddX(-buttonAdd.Width + LealConstants.GAP / 2);
 
-        buttonCancel.DockBottomWithPadding(LealConstants.GAP * 2);
-        buttonCancel.HorizontalCentralize();
-        buttonCancel.AddX(buttonCancel.Width - LealConstants.GAP / 2);
+        buttonClose.DockBottomWithPadding(LealConstants.GAP * 2);
+        buttonClose.HorizontalCentralize();
+        buttonClose.AddX(buttonClose.Width - LealConstants.GAP / 2);
     }
 
-    private void AddNewUrlData()
+    private void AddNewUrlData(LealTextBox urlInput, LealTextBox title)
     {
-
+        UrlDataAdd?.Invoke(this, new UrlData(urlInput.Text!, title.Text!));
+        urlInput.Text = string.Empty;
     }
 }
