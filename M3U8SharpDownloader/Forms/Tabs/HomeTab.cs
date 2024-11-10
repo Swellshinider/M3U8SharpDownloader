@@ -25,7 +25,7 @@ internal sealed class HomeTab : BaseTab
     private LealButton? _buttonDownload;
     private LealButton? _buttonAddUrl;
     private LealPanel? _urlsListPanel;
-    private CancellationTokenSource _cts;
+    private CancellationTokenSource? _cts;
 
     private readonly M3U8Converter _converter = new();
 
@@ -41,7 +41,7 @@ internal sealed class HomeTab : BaseTab
         _converter.OnFileProgress += Conversion_Progress;
         _converter.OnFileStarted += Converter_Started;
         _converter.OnFileCompleted += Converter_Completed;
-        _converter.OnErrorHappened += (ex) => ex.HandleException(ErrorType.Process, "Unable to retry");
+        _converter.OnErrorHappened += (ex) => ex.HandleException(ErrorType.Warning);
 
         _searchBox = new LealTextBox()
         {
@@ -140,22 +140,33 @@ internal sealed class HomeTab : BaseTab
         if (sender is not LealButton lb)
             return;
 
-        lb.Enabled = false;
         var xPoint = Width - (Width - _searchBox!.Location.X);
         var yPoint = lb.Location.Y + lb.Height;
         var pointScreen = PointToScreen(new Point(xPoint, yPoint));
         var modalUrl = new AddUrlModal(pointScreen);
         modalUrl.UrlDataAdd += ModalUrl_UrlDataAdd;
-        modalUrl.FormClosed += (s, e) => lb.Enabled = true;
         modalUrl.ShowDialog();
     }
 
     private void ModalUrl_UrlDataAdd(object? sender, UrlData e)
     {
+        var conversionPanels = _urlsListPanel!.GetChildsOfType<ConversionPanel>().ToList();
+
+        if (conversionPanels.Any(c => c.UrlData == e))
+        {
+            var dialog = MessageBox.Show(
+                "Url already added, are you sure about adding it again?",
+                "Url already Exists", 
+                MessageBoxButtons.YesNo, 
+                MessageBoxIcon.Information);
+
+            if (dialog != DialogResult.Yes)
+                return;
+        }
+
         var conversionPanel = new ConversionPanel(e);
         _urlsListPanel!.Add(conversionPanel);
 
-        var conversionPanels = _urlsListPanel!.GetChildsOfType<ConversionPanel>().ToList();
         conversionPanels.ForEach(c =>
         {
             c.Height = 150;
