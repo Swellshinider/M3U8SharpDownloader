@@ -37,10 +37,10 @@ public sealed class MainForm : LealForm
         _currentSizeIndex = Settings.Default.SizeIndex >= _sizes.Count
             ? _sizes.Count - 1
             : Settings.Default.SizeIndex;
-        SetFixedSize(_sizes[_currentSizeIndex].Width, _sizes[_currentSizeIndex].Height);
-        Location = new Point(
-            (Screen.PrimaryScreen!.WorkingArea.Width - Width) / 2,
-            (Screen.PrimaryScreen!.WorkingArea.Height - Height) / 2);
+        this.SetFixedSize(_sizes[_currentSizeIndex]);
+        var centerX = (Screen.PrimaryScreen!.WorkingArea.Width - Width) / 2;
+        var centerY = (Screen.PrimaryScreen!.WorkingArea.Height - Height) / 2;
+        Location = new Point(centerX, centerY);
     }
 
     public override void ReDraw()
@@ -136,7 +136,7 @@ public sealed class MainForm : LealForm
         if (tabType == null || !typeof(BaseTab).IsAssignableFrom(tabType))
             return;
 
-        var existingTab = _tabs.FirstOrDefault(t => t.GetType() == tabType);
+        var existingTab = _tabs.Find(t => t.GetType() == tabType);
 
         if (existingTab != null)
         {
@@ -146,7 +146,7 @@ public sealed class MainForm : LealForm
         else
         {
             var newTab = Activator.CreateInstance(tabType) as BaseTab ??
-                throw new Exception("Could not instantiate tab with activator");
+                throw new InvalidOperationException("Could not instantiate tab with activator");
 
             _tabs.Add(newTab);
             _container.Controls.Clear();
@@ -160,25 +160,21 @@ public sealed class MainForm : LealForm
             return;
 
         var previousSizeIndex = _currentSizeIndex;
+        var increaseSize = e.KeyCode == Keys.Oemplus || e.KeyCode == Keys.Add;
+        var decreaseSize = e.KeyCode == Keys.OemMinus || e.KeyCode == Keys.Subtract;
 
-        if (e.KeyCode == Keys.Oemplus || e.KeyCode == Keys.Add)
-        {
-            if (_currentSizeIndex < _sizes.Count - 1)
-                _currentSizeIndex++;
-        }
-        else if (e.KeyCode == Keys.OemMinus || e.KeyCode == Keys.Subtract)
-        {
-            if (_currentSizeIndex > 0)
-                _currentSizeIndex--;
-        }
+        if (increaseSize && _currentSizeIndex < _sizes.Count - 1)
+            _currentSizeIndex++;
+        else if (decreaseSize && _currentSizeIndex > 0)
+            _currentSizeIndex--;
 
         if (previousSizeIndex == _currentSizeIndex)
             return;
 
-        SetFixedSize(_sizes[_currentSizeIndex].Width, _sizes[_currentSizeIndex].Height);
-        Location = new Point(
-            (Screen.PrimaryScreen!.WorkingArea.Width - Width) / 2,
-            (Screen.PrimaryScreen!.WorkingArea.Height - Height) / 2);
+        this.SetFixedSize(_sizes[_currentSizeIndex]);
+        var centerX = (Screen.PrimaryScreen!.WorkingArea.Width - Width) / 2;
+        var centerY = (Screen.PrimaryScreen!.WorkingArea.Height - Height) / 2;
+        Location = new Point(centerX, centerY);
         Settings.Default.SizeIndex = _currentSizeIndex;
         Settings.Default.Save();
     }

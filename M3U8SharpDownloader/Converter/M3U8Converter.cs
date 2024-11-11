@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -11,21 +12,24 @@ namespace M3U8SharpDownloader.Converter;
 
 internal sealed class M3U8Converter
 {
-    internal delegate void FileStarted(UrlData urlData);
+    internal delegate void FileStarted(DownloadData urlData);
     internal event FileStarted? OnFileStarted;
 
-    internal delegate void FileProgress(UrlData urlData, ConversionProgressEventArgs eventArgs);
+    internal delegate void FileProgress(DownloadData urlData, ConversionProgressEventArgs eventArgs, long timeSpent);
     internal event FileProgress? OnFileProgress;
 
-    internal delegate void FileCompleted(UrlData urlData, string finalPath, long timeSpan);
+    internal delegate void FileCompleted(DownloadData urlData, string finalPath, long timeSpent);
     internal event FileCompleted? OnFileCompleted;
 
-    internal delegate void FileError(Exception exception);
+    internal delegate void FileCancelled(DownloadData urlData, CancellationToken cancellationToken);
+    internal event FileCancelled? OnFileCancelled;
+
+    internal delegate void FileError(DownloadData urlData, Exception exception);
     internal FileError? OnErrorHappened;
 
     internal M3U8Converter() { }
 
-    internal async Task ConvertAsync(List<UrlData> urls, string outputFolder, ExtensionType outputFormat, CancellationToken cancellationToken, bool useGpu = true, int maxThreads = 4)
+    internal async Task ConvertAsync(List<DownloadData> urls, string outputFolder, ExtensionType outputFormat, CancellationToken cancellationToken, bool useGpu = true, int maxThreads = 4)
     {
         using var semaphore  = new SemaphoreSlim(maxThreads);
 
@@ -35,7 +39,7 @@ internal sealed class M3U8Converter
 
             try
             {
-                await ConvertSingleAsync(urlData, outputFolder, outputFormat, cancellationToken);
+                await ConvertSingleAsync(urlData, outputFolder, outputFormat, cancellationToken, useGpu);
             }
             finally
             {
@@ -47,12 +51,13 @@ internal sealed class M3U8Converter
         await Task.WhenAll(processTasks);
     }
 
-    private async Task ConvertSingleAsync(UrlData urlData, string outputFolder, ExtensionType outputFormat, CancellationToken cancellationToken, bool useGpu = true)
+    private async Task ConvertSingleAsync(DownloadData urlData, string outputFolder, ExtensionType outputFormat, CancellationToken cancellationToken, bool useGpu = true)
     {
-        var finalPath = Path.Combine(outputFolder, $"{urlData.FileName}{GetText(outputFormat)}");
+        var finalPath = Path.Combine(outputFolder, $"{urlData.Data.Title}{GetText(outputFormat)}");
         var conversion = FFmpeg.Conversions.New()
             .AddParameter($"-i \"{urlData.Url}\"", ParameterPosition.PreInput)
             .AddParameter(useGpu ? "-c:v h264_nvenc" : "-c:v libx264");
+        conversion.SetPriority(ProcessPriorityClass.AboveNormal);
 
         switch (outputFormat)
         {
@@ -60,7 +65,6 @@ internal sealed class M3U8Converter
                 conversion.AddParameter("-vn"); // Disable video
                 conversion.SetOutput(finalPath);
                 break;
-            case ExtensionType.MP4:
             default:
                 conversion.SetOutput(finalPath);
                 break;
@@ -73,17 +77,20 @@ internal sealed class M3U8Converter
 
             conversion.OnProgress += (sender, eventArgs) =>
             {
-                OnFileProgress?.Invoke(urlData, eventArgs);
+                OnFileProgress?.Invoke(urlData, eventArgs, DateTime.Now.Ticks - startSpan);
             };
 
             await conversion.Start(cancellationToken);
 
             OnFileCompleted?.Invoke(urlData, finalPath, DateTime.Now.Ticks - startSpan);
         }
-        catch (OperationCanceledException) { }
+        catch (OperationCanceledException)
+        {
+            OnFileCancelled?.Invoke(urlData, cancellationToken);
+        }
         catch (Exception ex)
         {
-            OnErrorHappened?.Invoke(ex);
+            OnErrorHappened?.Invoke(urlData, ex);
         }
     }
 

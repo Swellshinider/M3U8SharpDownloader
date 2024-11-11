@@ -13,7 +13,6 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Xabe.FFmpeg.Events;
 
@@ -38,10 +37,11 @@ internal sealed class HomeTab : BaseTab
 
     protected override void LoadComponents()
     {
-        _converter.OnFileProgress += Conversion_Progress;
         _converter.OnFileStarted += Converter_Started;
+        _converter.OnFileProgress += Conversion_Progress;
         _converter.OnFileCompleted += Converter_Completed;
-        _converter.OnErrorHappened += (ex) => ex.HandleException(ErrorType.Warning);
+        _converter.OnFileCancelled += Converter_Canceled;
+        _converter.OnErrorHappened += Converter_Error;
 
         _searchBox = new LealTextBox()
         {
@@ -85,9 +85,9 @@ internal sealed class HomeTab : BaseTab
         _urlsListPanel.DockFillWithPadding(LealConstants.GAP, LealConstants.GAP, 0, _searchBox.Location.Y + _searchBox.Height + LealConstants.GAP);
     }
 
-    private void Converter_Started(UrlData urlData)
+    private void Converter_Started(DownloadData urlData)
     {
-        var conversionPanels = _urlsListPanel!.Controls.GetChildsOfType<ConversionPanel>();
+        var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>();
         var conversionPanel = conversionPanels.FirstOrDefault(c => c.UrlData.Url == urlData.Url);
 
         if (conversionPanel == null)
@@ -96,9 +96,9 @@ internal sealed class HomeTab : BaseTab
         conversionPanel.IsDownloading = true;
     }
 
-    private void Conversion_Progress(UrlData urlData, ConversionProgressEventArgs eventArgs)
+    private void Conversion_Progress(DownloadData urlData, ConversionProgressEventArgs eventArgs, long timeSpent)
     {
-        var conversionPanels = _urlsListPanel!.Controls.GetChildsOfType<ConversionPanel>();
+        var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>();
         var conversionPanel = conversionPanels.FirstOrDefault(c => c.UrlData.Url == urlData.Url);
 
         if (conversionPanel == null) 
@@ -107,9 +107,9 @@ internal sealed class HomeTab : BaseTab
         conversionPanel.Progress = eventArgs;
     }
 
-    private void Converter_Completed(UrlData urlData, string finalPath, long timeSpan)
+    private void Converter_Completed(DownloadData urlData, string finalPath, long timeSpan)
     {
-        var conversionPanels = _urlsListPanel!.Controls.GetChildsOfType<ConversionPanel>();
+        var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>();
         var conversionPanel = conversionPanels.FirstOrDefault(c => c.UrlData.Url == urlData.Url);
 
         if (conversionPanel == null)
@@ -118,10 +118,20 @@ internal sealed class HomeTab : BaseTab
         conversionPanel.IsDownloading = false;
     }
 
+    private void Converter_Canceled(DownloadData urlData, CancellationToken cancellationToken)
+    {
+        throw new NotImplementedException();
+    }
+
+    private void Converter_Error(DownloadData urlData, Exception exception)
+    {
+        throw new NotImplementedException();
+    }
+
     private async void StartDownload(object? sender, EventArgs e)
     {
-        var conversionPanels = _urlsListPanel!.Controls.GetChildsOfType<ConversionPanel>();
-        var urlsData = new List<UrlData>();
+        var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>();
+        var urlsData = new List<DownloadData>();
         _cts = new CancellationTokenSource();
         foreach (var conversionPanel in conversionPanels)
         {
@@ -148,11 +158,11 @@ internal sealed class HomeTab : BaseTab
         modalUrl.ShowDialog();
     }
 
-    private void ModalUrl_UrlDataAdd(object? sender, UrlData e)
+    private void ModalUrl_UrlDataAdd(object? sender, DownloadData urlData)
     {
-        var conversionPanels = _urlsListPanel!.GetChildsOfType<ConversionPanel>().ToList();
+        var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>().ToList();
 
-        if (conversionPanels.Any(c => c.UrlData == e))
+        if (conversionPanels.Exists(c => c.UrlData == urlData))
         {
             var dialog = MessageBox.Show(
                 "Url already added, are you sure about adding it again?",
@@ -164,7 +174,7 @@ internal sealed class HomeTab : BaseTab
                 return;
         }
 
-        var conversionPanel = new ConversionPanel(e);
+        var conversionPanel = new ConversionPanel(urlData);
         _urlsListPanel!.Add(conversionPanel);
 
         conversionPanels.ForEach(c =>

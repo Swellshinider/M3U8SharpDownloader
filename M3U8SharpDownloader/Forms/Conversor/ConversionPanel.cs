@@ -17,17 +17,13 @@ internal sealed class ConversionPanel : LealPanel
     private ConversionProgressEventArgs? _progress;
     private Label? _labelProcessingTime;
 
-    private readonly bool _load = false;
-
-    internal ConversionPanel(UrlData urlData)
+    internal ConversionPanel(DownloadData urlData)
     {
         UrlData = urlData;
         BackColor = ColorPallete.SecondaryBackgroundColor;
-        _load = true;
-        LoadComponents();
     }
 
-    internal UrlData UrlData { get; }
+    internal DownloadData UrlData { get; }
 
     internal bool IsDownloading
     {
@@ -63,7 +59,7 @@ internal sealed class ConversionPanel : LealPanel
                 _progressBar.Invoke(new Action(() =>
                 {
                     _progressBar.Value = value.Percent;
-                    _labelProcessingTime!.Text = $"Processing Time: {value.Duration:hh\\:mm\\:ss}";
+                    _labelProcessingTime!.Text = $"Processing Time: {value.Duration:hh\\mm\\ss}";
                     BackColor = Color.Red.BlendColors(Color.Blue, value.Percent / 100.0f);
                     Invalidate();
                 }));
@@ -71,7 +67,7 @@ internal sealed class ConversionPanel : LealPanel
             else
             {
                 _progressBar.Value = value.Percent;
-                _labelProcessingTime!.Text = $"Processing Time: {value.Duration:hh\\:mm\\:ss}";
+                _labelProcessingTime!.Text = $"Processing Time: {value.Duration:hh\\mm\\ss}";
                 BackColor = Color.Red.BlendColors(Color.Blue, value.Percent / 100.0f);
                 Invalidate();
             }
@@ -80,9 +76,6 @@ internal sealed class ConversionPanel : LealPanel
 
     protected override void LoadComponents()
     {
-        if (!_load)
-            return;
-
         _progressBar = new ProgressBar()
         {
             Value = 0,
@@ -96,7 +89,7 @@ internal sealed class ConversionPanel : LealPanel
         {
             Height = 40,
             AutoSize = false,
-            Text = UrlData.FileName,
+            Text = $"{(UrlData.Data.IsMovie ? "Movie" : "Serie")}: {UrlData.Data.Title[..10]}",
             ForeColor = Color.White,
             Dock = DockStyle.Top,
             Font = new Font("Rubik", 16, FontStyle.Bold),
@@ -106,7 +99,7 @@ internal sealed class ConversionPanel : LealPanel
         _labelProcessingTime = new Label() 
         {
             AutoSize = false,
-            Text = "Not Processing...",
+            Text = "Not started",
             ForeColor = Color.White,
             Dock = DockStyle.Bottom,
             Font = new Font("Rubik", 12, FontStyle.Regular),

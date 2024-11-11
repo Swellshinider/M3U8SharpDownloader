@@ -10,19 +10,11 @@ using System.Windows.Forms;
 
 namespace M3U8SharpDownloader.Forms.Modals;
 
-internal sealed class AddUrlModal : LealForm
+internal sealed class AddUrlModal : LealModal
 {
-    internal event EventHandler<UrlData>? UrlDataAdd;
+    internal event EventHandler<DownloadData>? UrlDataAdd;
 
-    internal AddUrlModal(Point openLocation)
-    {
-        StartPosition = FormStartPosition.Manual;
-        FormBorderStyle = FormBorderStyle.None;
-
-        Size = new Size(openLocation.X, 300);
-
-        Location = openLocation;
-    }
+    internal AddUrlModal(Point openLocation) : base(new Size(openLocation), openLocation) { }
 
     public override void ReDraw()
     {
@@ -54,7 +46,7 @@ internal sealed class AddUrlModal : LealForm
         };
         this.Add(title);
 
-        var buttonAdd = new LealButton((s, e) => AddNewUrlData(urlInput, title))
+        var buttonAdd = new LealButton((s, e) => AddNewUrlData(urlInput.Text ?? "", title.Text ?? ""))
         {
             Height = 50,
             Width = 125,
@@ -77,17 +69,14 @@ internal sealed class AddUrlModal : LealForm
         title.SetX(urlInput.Location.X);
 
         buttonAdd.DockBottomWithPadding(LealConstants.GAP * 2);
-        buttonAdd.HorizontalCentralize();
-        buttonAdd.AddX(-buttonAdd.Width + LealConstants.GAP / 2);
-
         buttonClose.DockBottomWithPadding(LealConstants.GAP * 2);
-        buttonClose.HorizontalCentralize();
-        buttonClose.AddX(buttonClose.Width - LealConstants.GAP / 2);
+
+        this.CentralizeWithSpacingChildrensOfTypeByX<LealButton>(LealConstants.GAP * 2);
+        ReDraw();
     }
 
-    private void AddNewUrlData(LealTextBox urlInput, LealTextBox title)
+    private void AddNewUrlData(string url, string title)
     {
-        UrlDataAdd?.Invoke(this, new UrlData(urlInput.Text!, title.Text!));
-        urlInput.Text = string.Empty;
+        UrlDataAdd?.Invoke(this, new DownloadData(url, new MovieSeriesData(title, "2024")));
     }
 }
