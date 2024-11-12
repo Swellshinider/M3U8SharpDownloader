@@ -120,12 +120,12 @@ internal sealed class HomeTab : BaseTab
 
     private void Converter_Canceled(DownloadData urlData, CancellationToken cancellationToken)
     {
-        throw new NotImplementedException();
+
     }
 
     private void Converter_Error(DownloadData urlData, Exception exception)
     {
-        throw new NotImplementedException();
+
     }
 
     private async void StartDownload(object? sender, EventArgs e)
@@ -160,9 +160,7 @@ internal sealed class HomeTab : BaseTab
 
     private void ModalUrl_UrlDataAdd(object? sender, DownloadData urlData)
     {
-        var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>().ToList();
-
-        if (conversionPanels.Exists(c => c.UrlData == urlData))
+        if (_urlsListPanel!.GetChildrenOfType<ConversionPanel>().ToList().Exists(c => c.UrlData == urlData))
         {
             var dialog = MessageBox.Show(
                 "Url already added, are you sure about adding it again?",
@@ -174,10 +172,8 @@ internal sealed class HomeTab : BaseTab
                 return;
         }
 
-        var conversionPanel = new ConversionPanel(urlData);
-        _urlsListPanel!.Add(conversionPanel);
-
-        conversionPanels.ForEach(c =>
+        _urlsListPanel!.Add(new ConversionPanel(urlData));
+        _urlsListPanel!.GetChildrenOfType<ConversionPanel>().ToList().ForEach(c =>
         {
             c.Height = 150;
             c.Width = _urlsListPanel!.Width;

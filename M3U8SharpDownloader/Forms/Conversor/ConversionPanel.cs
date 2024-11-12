@@ -89,7 +89,7 @@ internal sealed class ConversionPanel : LealPanel
         {
             Height = 40,
             AutoSize = false,
-            Text = $"{(UrlData.Data.IsMovie ? "Movie" : "Serie")}: {UrlData.Data.Title[..10]}",
+            Text = $"{(UrlData.Data.IsMovie ? "Movie" : "Serie")}: {UrlData.Data.Title[..Math.Min(50, UrlData.Data.Title.Length)]}",
             ForeColor = Color.White,
             Dock = DockStyle.Top,
             Font = new Font("Rubik", 16, FontStyle.Bold),
