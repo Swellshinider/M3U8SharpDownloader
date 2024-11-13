@@ -79,7 +79,7 @@ internal sealed class HomeTab : BaseTab
         _urlsListPanel = new LealPanel()
         {
             AutoScroll = true,
-            BackColor = Color.WhiteSmoke,
+            BackColor = ColorPallete.MainBackgroundColor,
         };
         this.Add(_urlsListPanel);
         _urlsListPanel.DockFillWithPadding(LealConstants.GAP, LealConstants.GAP, 0, _searchBox.Location.Y + _searchBox.Height + LealConstants.GAP);
@@ -93,10 +93,10 @@ internal sealed class HomeTab : BaseTab
         if (conversionPanel == null)
             return;
 
-        conversionPanel.IsDownloading = true;
+        conversionPanel.UpdateProgress(new ConversionProgressEventArgs(TimeSpan.Zero, TimeSpan.Zero, 0));
     }
 
-    private void Conversion_Progress(DownloadData urlData, ConversionProgressEventArgs eventArgs, long timeSpent)
+    private void Conversion_Progress(DownloadData urlData, ConversionProgressEventArgs progress, TimeSpan timeSpent)
     {
         var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>();
         var conversionPanel = conversionPanels.FirstOrDefault(c => c.UrlData.Url == urlData.Url);
@@ -104,10 +104,10 @@ internal sealed class HomeTab : BaseTab
         if (conversionPanel == null) 
             return;
 
-        conversionPanel.Progress = eventArgs;
+        conversionPanel.UpdateProgress(progress);
     }
 
-    private void Converter_Completed(DownloadData urlData, string finalPath, long timeSpan)
+    private void Converter_Completed(DownloadData urlData, string finalPath, TimeSpan timeSpan)
     {
         var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>();
         var conversionPanel = conversionPanels.FirstOrDefault(c => c.UrlData.Url == urlData.Url);
@@ -115,17 +115,29 @@ internal sealed class HomeTab : BaseTab
         if (conversionPanel == null)
             return;
 
-        conversionPanel.IsDownloading = false;
+        conversionPanel.Finish(timeSpan);
     }
 
     private void Converter_Canceled(DownloadData urlData, CancellationToken cancellationToken)
     {
+        var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>();
+        var conversionPanel = conversionPanels.FirstOrDefault(c => c.UrlData.Url == urlData.Url);
 
+        if (conversionPanel == null)
+            return;
+
+        conversionPanel.Cancel();
     }
 
     private void Converter_Error(DownloadData urlData, Exception exception)
     {
+        var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>();
+        var conversionPanel = conversionPanels.FirstOrDefault(c => c.UrlData.Url == urlData.Url);
 
+        if (conversionPanel == null)
+            return;
+
+        conversionPanel.SetError(exception.Message);
     }
 
     private async void StartDownload(object? sender, EventArgs e)
@@ -133,12 +145,13 @@ internal sealed class HomeTab : BaseTab
         var conversionPanels = _urlsListPanel!.GetChildrenOfType<ConversionPanel>();
         var urlsData = new List<DownloadData>();
         _cts = new CancellationTokenSource();
+
         foreach (var conversionPanel in conversionPanels)
         {
-            if (conversionPanel.IsDownloading)
+            if (conversionPanel.InProgress)
                 continue;
 
-            conversionPanel.IsDownloading = true;
+            conversionPanel.InProgress = true;
             urlsData.Add(conversionPanel.UrlData);
         }
 
@@ -172,12 +185,11 @@ internal sealed class HomeTab : BaseTab
                 return;
         }
 
-        _urlsListPanel!.Add(new ConversionPanel(urlData));
+        _urlsListPanel!.Add(new ConversionPanel(urlData, ColorPallete.SecondaryBackgroundColor, Color.Red, Color.Blue));
         _urlsListPanel!.GetChildrenOfType<ConversionPanel>().ToList().ForEach(c =>
         {
             c.Height = 150;
-            c.Width = _urlsListPanel!.Width;
-            c.Centralize();
+            c.DockLeftRightWithPadding(0, 0);
         });
 
         _urlsListPanel!.WaterFallChildControlsOfTypeByY<ConversionPanel>(0, LealConstants.GAP / 2);

@@ -15,10 +15,10 @@ internal sealed class M3U8Converter
     internal delegate void FileStarted(DownloadData urlData);
     internal event FileStarted? OnFileStarted;
 
-    internal delegate void FileProgress(DownloadData urlData, ConversionProgressEventArgs eventArgs, long timeSpent);
+    internal delegate void FileProgress(DownloadData urlData, ConversionProgressEventArgs eventArgs, TimeSpan timeSpent);
     internal event FileProgress? OnFileProgress;
 
-    internal delegate void FileCompleted(DownloadData urlData, string finalPath, long timeSpent);
+    internal delegate void FileCompleted(DownloadData urlData, string finalPath, TimeSpan timeSpent);
     internal event FileCompleted? OnFileCompleted;
 
     internal delegate void FileCancelled(DownloadData urlData, CancellationToken cancellationToken);
@@ -72,17 +72,20 @@ internal sealed class M3U8Converter
 
         try
         {
-            var startSpan = DateTime.Now.Ticks;
+            var stopWatch = Stopwatch.StartNew();
+            stopWatch.Start();
+
             OnFileStarted?.Invoke(urlData); 
 
             conversion.OnProgress += (sender, eventArgs) =>
             {
-                OnFileProgress?.Invoke(urlData, eventArgs, DateTime.Now.Ticks - startSpan);
+                OnFileProgress?.Invoke(urlData, eventArgs, stopWatch.Elapsed);
             };
 
             await conversion.Start(cancellationToken);
 
-            OnFileCompleted?.Invoke(urlData, finalPath, DateTime.Now.Ticks - startSpan);
+            stopWatch.Stop();
+            OnFileCompleted?.Invoke(urlData, finalPath, stopWatch.Elapsed);
         }
         catch (OperationCanceledException)
         {
