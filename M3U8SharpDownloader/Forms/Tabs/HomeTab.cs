@@ -1,9 +1,7 @@
 ﻿using LForms;
 using LForms.Controls.Buttons;
-using LForms.Controls.Forms;
 using LForms.Controls.Panels;
 using LForms.Controls.TextBoxes;
-using LForms.Enums;
 using LForms.Extensions;
 using M3U8SharpDownloader.Converter;
 using M3U8SharpDownloader.Forms.Conversor;
@@ -82,6 +80,7 @@ internal sealed class HomeTab : BaseTab
             BackColor = ColorPallete.MainBackgroundColor,
         };
         this.Add(_urlsListPanel);
+
         _urlsListPanel.DockFillWithPadding(LealConstants.GAP, LealConstants.GAP, 0, _searchBox.Location.Y + _searchBox.Height + LealConstants.GAP);
     }
 
@@ -185,7 +184,17 @@ internal sealed class HomeTab : BaseTab
                 return;
         }
 
-        _urlsListPanel!.Add(new ConversionPanel(urlData, ColorPallete.SecondaryBackgroundColor, Color.Red, Color.Blue));
+        var conversionPanel = new ConversionPanel(urlData, ColorPallete.SecondaryBackgroundColor, Color.Red, Color.Blue);
+        conversionPanel.CloseConversionPanel += (s, e) =>
+        {
+            if (s is not ConversionPanel cp)
+                return;
+
+            _urlsListPanel!.Remove(cp);
+            _urlsListPanel!.WaterFallChildControlsOfTypeByY<ConversionPanel>(0, LealConstants.GAP / 2);
+        };
+
+        _urlsListPanel!.Add(conversionPanel);
         _urlsListPanel!.GetChildrenOfType<ConversionPanel>().ToList().ForEach(c =>
         {
             c.Height = 150;

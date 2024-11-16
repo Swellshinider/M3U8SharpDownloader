@@ -1,4 +1,5 @@
-﻿using LForms.Controls.Panels;
+﻿using LForms.Controls.Buttons;
+using LForms.Controls.Panels;
 using LForms.Extensions;
 using M3U8SharpDownloader.Converter;
 using System;
@@ -11,6 +12,8 @@ namespace M3U8SharpDownloader.Forms.Conversor;
 
 internal sealed class ConversionPanel : LealPanel
 {
+    internal event EventHandler<DownloadData>? CloseConversionPanel;
+
     private Label? _labelProcessingTime;
 
     private ProgressBar? _progressBar;
@@ -47,13 +50,13 @@ internal sealed class ConversionPanel : LealPanel
             _progressBar.Invoke(() =>
             {
                 _progressBar.Value = CapPercentage(progress.Percent);
-                _labelProcessingTime.Text =  $"Processing {FormatSpan(progress.Duration)}/{FormatSpan(progress.TotalLength)} ({progress.Percent}%)";
+                _labelProcessingTime.Text =  $"Processing {FormatSpan(progress.Duration)}/{FormatSpan(progress.TotalLength)} ({CapPercentage(progress.Percent)}%)";
             });
         }
         else
         {
             _progressBar.Value = CapPercentage(progress.Percent);
-            _labelProcessingTime.Text = $"Processing {FormatSpan(progress.Duration)}/{FormatSpan(progress.TotalLength)} ({progress.Percent}%)";
+            _labelProcessingTime.Text = $"Processing {FormatSpan(progress.Duration)}/{FormatSpan(progress.TotalLength)} ({CapPercentage(progress.Percent)}%)";
         }
     }
 
@@ -80,26 +83,6 @@ internal sealed class ConversionPanel : LealPanel
         }
     }
 
-    internal void Cancel()
-    {
-        Trace.Assert(_labelProcessingTime != null);
-
-        InProgress = false;
-        BackColor = _finishedColor;
-
-        if (_labelProcessingTime.InvokeRequired)
-        {
-            _labelProcessingTime.Invoke(() =>
-            {
-                _labelProcessingTime.Text = $"Cancelled";
-            });
-        }
-        else
-        {
-            _labelProcessingTime.Text = $"Cancelled";
-        }
-    }
-
     internal void SetError(string message)
     {
         Trace.Assert(_labelProcessingTime != null);
@@ -120,6 +103,26 @@ internal sealed class ConversionPanel : LealPanel
         }
     }
 
+    internal void Cancel()
+    {
+        Trace.Assert(_labelProcessingTime != null);
+
+        InProgress = false;
+        BackColor = _finishedColor;
+
+        if (_labelProcessingTime.InvokeRequired)
+        {
+            _labelProcessingTime.Invoke(() =>
+            {
+                _labelProcessingTime.Text = $"Cancelled";
+            });
+        }
+        else
+        {
+            _labelProcessingTime.Text = $"Cancelled";
+        }
+    }
+
     protected override void LoadComponents()
     {
         var labelTitle = new Label()
@@ -131,6 +134,17 @@ internal sealed class ConversionPanel : LealPanel
             Text = UrlData.ToString(),
             Font = new Font("Rubik", 16, FontStyle.Bold),
             TextAlign = ContentAlignment.MiddleLeft,
+        };
+
+        var closeBtn = new LealButton((s, e) => CloseConversionPanel?.Invoke(this, UrlData))
+        {
+            Text = "X",
+            BorderSize = 0,
+            Width = 38,
+            Height = 38,
+            MouseHoverColor = Color.Red,
+            MouseDownColor = Color.Red.Darken(0.3),
+            Font = new Font("Rubik", 12, FontStyle.Bold),
         };
 
         _progressBar = new ProgressBar()
@@ -156,6 +170,8 @@ internal sealed class ConversionPanel : LealPanel
         this.Add(_labelProcessingTime);
         this.Add(_progressBar);
         this.Add(labelTitle);
+        labelTitle.Add(closeBtn);
+        closeBtn.DockTopRightWithPadding(0, 0);
     }
 
     private static int CapPercentage(int percentage) => Math.Min(100, Math.Max(0, percentage));
