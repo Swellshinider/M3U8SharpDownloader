@@ -15,9 +15,9 @@ namespace M3U8SharpDownloader.Forms;
 
 public sealed class MainForm : LealForm
 {
-    private readonly LealPanel _topPanel = new(true);
-    private readonly LealPanel _leftPanel = new(true);
-    private readonly LealPanel _container = new(false);
+    private readonly LealPanel _topPanel = new(true, true);
+    private readonly LealPanel _leftPanel = new(true, true);
+    private readonly LealPanel _container = new(false, true);
     private readonly List<BaseTab> _tabs = [];
     private readonly List<Size> _sizes = [
         new Size(1280, 720),
@@ -46,6 +46,7 @@ public sealed class MainForm : LealForm
     public override void ReDraw()
     {
         this.GenerateRoundRegion();
+        Invalidate();
     }
 
     public override void LoadComponents()
@@ -57,8 +58,6 @@ public sealed class MainForm : LealForm
         _leftPanel.Dock = DockStyle.Left;
         _container.Dock = DockStyle.Fill;
 
-        this.Add(_container);
-        this.Add(_leftPanel);
         this.Add(new LealSeparator()
         {
             Height = 2,
@@ -68,6 +67,8 @@ public sealed class MainForm : LealForm
             LineColor = ColorPallete.HighLightColor,
             Orientation = Orientation.Horizontal,
         });
+        this.Add(_container);
+        this.Add(_leftPanel);
         this.Add(_topPanel);
 
         ////////////////////////////////////////////////////
